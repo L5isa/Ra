@@ -1335,14 +1335,17 @@ async function readBuiltinRegex(url) {
       target[lastKey] = value;
     }
 
-    function sanitizeConfigCode(code) {
-      return code
-        .replace(/[\u201c\u201d]/g, '"')
-        .replace(/[\u2018\u2019]/g, "'")
-        .replace(/\uff1a/g, ":")
-        .replace(/\uff0c/g, ",")
-        .replace(/\u3000/g, " ");
-    }
+function sanitizeConfigCode(code) {
+  return String(code)
+    .replace(/^\uFEFF/, "")
+    .replace(/[\u201c\u201d]/g, '"')
+    .replace(/[\u2018\u2019]/g, "'")
+    .replace(/\uff1a/g, ":")
+    .replace(/\uff0c/g, ",")
+    .replace(/\u3000/g, " ")
+    .trim();
+}
+
 function unwrapHtmlCodeFence(html) {
   return String(html || "")
     .replace(/^\s*```html\s*/i, "")
@@ -1350,40 +1353,41 @@ function unwrapHtmlCodeFence(html) {
     .trim();
 }
     function parseConfigFromReplaceString(replaceString) {
-      const match = replaceString.match(
-        /window\.(\w*CONFIG)\s*=\s*(\{[\s\S]*?\n\}\s*;)/
-      );
+  const match = replaceString.match(
+    /window\.(\w*CONFIG)\s*=\s*(\{[\s\S]*?\n\}\s*;)/
+  );
 
-      if (!match) {
-        throw new Error(
-          "replaceString 中没有找到 window.CONFIG"
-        );
-      }
+  if (!match) {
+    throw new Error(
+      "replaceString 中没有找到完整的 window.CONFIG 配置"
+    );
+  }
 
-      const configVarName = match[1];
+  const configVarName = match[1];
 
-      let configCode = match[2]
-        .replace(/\}\s*;$/, "");
+  let configCode = match[2]
+    .replace(/\}\s*;\s*$/, "")
+    .trim();
 
-      configCode = sanitizeConfigCode(configCode);
+  configCode = sanitizeConfigCode(configCode);
 
-      let config;
+  let config;
 
-      try {
-        config = Function(
-          `"use strict"; return (${configCode});`
-        )();
-      } catch (error) {
-        throw new Error(
-          `CONFIG 配置解析失败：${error.message}`
-        );
-      }
+  try {
+    config = JSON.parse(configCode);
+  } catch (error) {
+    console.error("CONFIG 原始文本：", configCode);
+    throw new Error(
+      `CONFIG JSON 解析失败：${error.message}`
+    );
+  }
 
-      return {
-        configVarName,
-        config
-      };
-    }
+  return {
+    configVarName,
+    config
+  };
+}
+
 
     function inputValue(input) {
       if (input.dataset.type === "boolean") {
