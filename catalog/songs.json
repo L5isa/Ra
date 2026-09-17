@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "songs": [
+    {
+      "id": "diet-pepsi-001",
+      "name": "Diet Pepsi",
+      "audio": "https://raw.githubusercontent.com/lu2594990-ux/Rabbit/main/audio/Diet%20Pepsi.mp3"
+    }
+  ]
+}
